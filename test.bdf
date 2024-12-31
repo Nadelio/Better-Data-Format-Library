@@ -1,0 +1,48 @@
+name "Alex" // string
+age 10 // int
+test true // boolean
+bobperson { // constant object
+  name "Bob",
+  age 21,
+  books [ // array
+    "LOTR",
+    "Harry Potter"
+  ]
+}
+
+otherperson {name string, age int} // dynamic type
+otherpeople ( // instancing
+  otherperson {name "Robert", age 20}
+)
+
+booklist {list [string]} // dynamic type w/ array
+wishlists ( // instance of dynamic type with array
+  booklist {list ["LOTR"]},
+  booklist {list ["Harry Potter"]}
+)
+
+nerd {person, booklist} // dynamic type w/ dynamic types
+alldata ( // instance of nested dynamic types
+  nerd {
+    person {name "Connor", age 23},
+    booklist {list ["TAPL"]}
+  },
+  nerd {
+    person {"Mia", 100},
+    booklist {list ["Java Reference"]}
+  }
+)
+
+// nyan
+// comments
+/* multiline comments */
+
+clients (
+  person {name "Alex", age 21}, // instance of person type
+  person {name "Sarah", age 23}, // instance of person type
+  population 2, // static field
+  bankinfo { // static object
+    bank "bank of nyan",
+    accnums [1, 2]
+  }
+)
