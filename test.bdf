@@ -1,6 +1,11 @@
 name "Alex" // string
 age 10 // int
+money 1.08 // double
 test true // boolean
+date 2000-12-31 // dates (ISO format)
+time 12:59:59 // timestamps (ISO format)
+bin #FFFFFF // binary/hexadecimal data
+
 bobperson { // constant object
   name "Bob",
   age 21,
@@ -10,39 +15,29 @@ bobperson { // constant object
   ]
 }
 
-otherperson {name string, age int} // dynamic type
-otherpeople ( // instancing
-  otherperson {name "Robert", age 20}
+person {name string, age int} // dynamic type w/ named fields
+people ( // instancing w/ named fields
+  p1 person {name "Robert", age 20}
 )
 
 booklist {list [string]} // dynamic type w/ array
+boundedbooklist{list [string, 10]} // dynamic type w/ bounded array
 wishlists ( // instance of dynamic type with array
-  booklist {list ["LOTR"]},
-  booklist {list ["Harry Potter"]}
+  b1 booklist {list ["LOTR"]},
+  b2 booklist {list ["Harry Potter"]}
 )
 
-nerd {person, booklist} // dynamic type w/ dynamic types
+nerd {p person, list booklist} // dynamic type w/ dynamic types
 alldata ( // instance of nested dynamic types
-  nerd {
-    person {name "Connor", age 23},
-    booklist {list ["TAPL"]}
+  n1 nerd {
+    p person {"Connor", 23},
+    list booklist {list ["TAPL"]}
   },
-  nerd {
-    person {"Mia", 100},
-    booklist {list ["Java Reference"]}
+  n2 nerd {
+    p person {"Mia", 100},
+    list booklist {list ["Java Reference"]}
   }
 )
 
 // nyan
 // comments
-/* multiline comments */
-
-clients (
-  person {name "Alex", age 21}, // instance of person type
-  person {name "Sarah", age 23}, // instance of person type
-  population 2, // static field
-  bankinfo { // static object
-    bank "bank of nyan",
-    accnums [1, 2]
-  }
-)

@@ -2,6 +2,7 @@ package BDF;
 
 public class Token {
     private int num;
+    private double dub;
     private String str;
     private boolean bool;
     private Lexer.Types type;
@@ -9,6 +10,11 @@ public class Token {
 
     public Token(Lexer.Types type, int num) {
         this.num = num;
+        this.type = type;
+    }
+
+    public Token(Lexer.Types type, double dub) {
+        this.dub = dub;
         this.type = type;
     }
 

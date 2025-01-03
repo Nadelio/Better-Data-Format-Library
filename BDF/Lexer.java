@@ -10,7 +10,11 @@ public class Lexer {
     public enum Types{
         STRING,
         INTEGER,
+        DOUBLE,
         BOOLEAN,
+        BINARY,
+        DATE,
+        TIMESTAMP,
         RBRACKET,
         LBRACKET,
         RPAREN,
@@ -66,6 +70,70 @@ public class Lexer {
         return c >= '0' && c <= '9' || c == '-';
     }
 
+    private boolean isBinaryCharacter(char c) {
+        return (c >= '0' && c <= '1') || (c >= 'A' && c <= 'F');
+    }
+
+    private boolean isDate() {
+        if(this.index + 9 >= this.input.length()){ return false; }
+        if((this.input.charAt(this.index + 4) != '-') || (this.input.charAt(this.index + 7) != '-')){ return false; }
+        if(isValidMonth() && isValidDay(this.input.indexOf((int) '-', this.index + 5))){ return true; }
+        return false;
+    }
+
+    private boolean isValidMonth(){
+        return Integer.parseInt(this.input.substring(this.index + 5, this.index + 7)) <= 12 && Integer.parseInt(this.input.substring(this.index + 5, this.index + 7)) >= 1;
+    }
+
+    private boolean isValidDay(int index){
+        return Integer.parseInt(this.input.substring(index + 1)) <= 31 && Integer.parseInt(this.input.substring(index + 1)) >= 1;
+    }
+
+    private boolean isTimestamp(){
+        int index = this.index;
+        if(isValidHour() && isValidMinute() && isValidSecond()){ 
+            this.index = index;
+            return true;
+        }
+        this.index = index;
+        return false;
+    }
+
+    private boolean isValidHour(){
+        int hour = parseInteger();
+        if(hour >= 0 && hour <= 24){
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isValidMinute(){
+        if(!Character.isDigit(currentChar)){return false;}
+        int minute = parseInteger();
+        if(minute >= 0 && minute <= 59){
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isValidSecond(){
+        if(!Character.isDigit(currentChar)){return false;}
+        int second = parseInteger();
+        if(second >= 0 && second <= 59){
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isDouble(){
+        try{
+            String doubleString = this.input.substring(this.index, this.input.indexOf(' ', this.index));
+            if(!doubleString.contains(".")){ return false; }
+            Double.parseDouble(doubleString);
+            return true;
+        } catch (NumberFormatException e){ return false; }
+    }
+
     private String parseIdentifier() {
         StringBuilder result = new StringBuilder();
         while (Character.isLetterOrDigit(this.currentChar) || this.currentChar == '_' || this.currentChar == '-') {
@@ -86,7 +154,7 @@ public class Lexer {
         return result.toString();
     }
 
-    private int parseNumber() {
+    private int parseInteger() {
         StringBuilder result = new StringBuilder();
         while (Character.isDigit(this.currentChar)) {
             result.append(this.currentChar);
@@ -95,11 +163,28 @@ public class Lexer {
         return Integer.parseInt(result.toString());
     }
 
+    private String parseDate(){
+        StringBuilder result = new StringBuilder();
+        while (Character.isDigit(this.currentChar) || this.currentChar == '-') {
+            result.append(this.currentChar);
+            consume();
+        }
+        return result.toString();
+    }
+
+    private String parseTimestamp(){
+        StringBuilder result = new StringBuilder();
+        while (Character.isDigit(this.currentChar) || this.currentChar == '-' || this.currentChar == ':' || this.currentChar == 'T' || this.currentChar == 'Z') {
+            result.append(this.currentChar);
+            consume();
+        }
+        return result.toString();
+    }
+
     private Token parseToken(){
         skipWhitespace();
-        if(this.currentChar == '\0'){
-            return new Token(Types.EOF, "\0");
-        }
+        if(this.currentChar == '\0'){ return new Token(Types.EOF, "\0"); }
+
         switch (this.currentChar) {
             case '"':
                 return new Token(Types.STRING, parseString());
@@ -124,6 +209,15 @@ public class Lexer {
             case '{':
                 consume();
                 return new Token(Types.LCURLY, "{");
+            case '#':
+                System.out.println("Binary");
+                consume();
+                StringBuilder r = new StringBuilder();
+                while(isBinaryCharacter(this.currentChar)){
+                    r.append(this.currentChar);
+                    consume();
+                }
+                return new Token(Types.BINARY, r.toString());
             case '/':
                 consume();
                 if(this.currentChar == '/'){
@@ -146,10 +240,25 @@ public class Lexer {
                     return new Token(Types.COMMENT, result.toString());
                 }
 
+                System.out.println("Identifier");
                 return new Token(Types.IDENTIFIER, parseIdentifier());
             default:
                 if(isDigit(currentChar)){
-                    return new Token(Types.INTEGER, parseNumber());
+                    if(isDate()){
+                        System.out.println("Date");
+                        return new Token(Types.DATE, parseDate());
+                    } else if(isTimestamp()){
+                        System.out.println("Timestamp");
+                        return new Token(Types.TIMESTAMP, parseTimestamp());
+                    } else if(isDouble()){
+                        System.out.println("Double");
+                        String doubleString = this.input.substring(this.index, this.input.indexOf(' ', this.index));
+                        System.out.println(doubleString);
+                        return new Token(Types.DOUBLE, Double.parseDouble(doubleString));
+                    } else {
+                        System.out.println("Integer");
+                        return new Token(Types.INTEGER, parseInteger());
+                    }
                 } else if(currentChar == 't' || currentChar == 'f'){
                     String bool = parseIdentifier();
                     if(bool.equals("true")){
