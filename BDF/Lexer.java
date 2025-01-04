@@ -1,6 +1,7 @@
 package BDF;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 public class Lexer {
     private String input;
@@ -23,6 +24,7 @@ public class Lexer {
         RCURLY,
         LCURLY,
         IDENTIFIER,
+        SCHEMA_INSTRUCTION,
         COMMENT,
         EOF
     }
@@ -33,14 +35,14 @@ public class Lexer {
         this.currentChar = input.charAt(0);
     }
 
-    public Token[] lex() {
+    public ArrayList<Token> lex() {
         ArrayList<Token> tokens = new ArrayList<Token>();
         Token token = parseToken();
         while (token.getType() != Types.EOF) {
             tokens.add(token);
             token = parseToken();
         }
-        return tokens.toArray(new Token[0]);
+        return tokens;
     }
 
     private void consume() {
@@ -74,66 +76,6 @@ public class Lexer {
         return (c >= '0' && c <= '1') || (c >= 'A' && c <= 'F');
     }
 
-    private boolean isDate() {
-        if(this.index + 9 >= this.input.length()){ return false; }
-        if((this.input.charAt(this.index + 4) != '-') || (this.input.charAt(this.index + 7) != '-')){ return false; }
-        if(isValidMonth() && isValidDay(this.input.indexOf((int) '-', this.index + 5))){ return true; }
-        return false;
-    }
-
-    private boolean isValidMonth(){
-        return Integer.parseInt(this.input.substring(this.index + 5, this.index + 7)) <= 12 && Integer.parseInt(this.input.substring(this.index + 5, this.index + 7)) >= 1;
-    }
-
-    private boolean isValidDay(int index){
-        return Integer.parseInt(this.input.substring(index + 1)) <= 31 && Integer.parseInt(this.input.substring(index + 1)) >= 1;
-    }
-
-    private boolean isTimestamp(){
-        int index = this.index;
-        if(isValidHour() && isValidMinute() && isValidSecond()){ 
-            this.index = index;
-            return true;
-        }
-        this.index = index;
-        return false;
-    }
-
-    private boolean isValidHour(){
-        int hour = parseInteger();
-        if(hour >= 0 && hour <= 24){
-            return true;
-        }
-        return false;
-    }
-
-    private boolean isValidMinute(){
-        if(!Character.isDigit(currentChar)){return false;}
-        int minute = parseInteger();
-        if(minute >= 0 && minute <= 59){
-            return true;
-        }
-        return false;
-    }
-
-    private boolean isValidSecond(){
-        if(!Character.isDigit(currentChar)){return false;}
-        int second = parseInteger();
-        if(second >= 0 && second <= 59){
-            return true;
-        }
-        return false;
-    }
-
-    private boolean isDouble(){
-        try{
-            String doubleString = this.input.substring(this.index, this.input.indexOf(' ', this.index));
-            if(!doubleString.contains(".")){ return false; }
-            Double.parseDouble(doubleString);
-            return true;
-        } catch (NumberFormatException e){ return false; }
-    }
-
     private String parseIdentifier() {
         StringBuilder result = new StringBuilder();
         while (Character.isLetterOrDigit(this.currentChar) || this.currentChar == '_' || this.currentChar == '-') {
@@ -163,18 +105,9 @@ public class Lexer {
         return Integer.parseInt(result.toString());
     }
 
-    private String parseDate(){
+    private String parseDecimal() {
         StringBuilder result = new StringBuilder();
-        while (Character.isDigit(this.currentChar) || this.currentChar == '-') {
-            result.append(this.currentChar);
-            consume();
-        }
-        return result.toString();
-    }
-
-    private String parseTimestamp(){
-        StringBuilder result = new StringBuilder();
-        while (Character.isDigit(this.currentChar) || this.currentChar == '-' || this.currentChar == ':' || this.currentChar == 'T' || this.currentChar == 'Z') {
+        while (Character.isDigit(this.currentChar)) {
             result.append(this.currentChar);
             consume();
         }
@@ -209,8 +142,10 @@ public class Lexer {
             case '{':
                 consume();
                 return new Token(Types.LCURLY, "{");
+            case '$':
+                consume();
+                return new Token(Types.SCHEMA_INSTRUCTION, parseIdentifier());
             case '#':
-                System.out.println("Binary");
                 consume();
                 StringBuilder r = new StringBuilder();
                 while(isBinaryCharacter(this.currentChar)){
@@ -223,7 +158,7 @@ public class Lexer {
                 if(this.currentChar == '/'){
                     consume();
                     StringBuilder result = new StringBuilder();
-                    while(this.currentChar != '\n' && this.currentChar != '\r'){
+                    while(this.currentChar != '\n' && this.currentChar != '\r' && this.currentChar != '\0' && this.index < this.input.length()){
                         result.append(this.currentChar);
                         consume();
                     }
@@ -239,25 +174,37 @@ public class Lexer {
                     consume();
                     return new Token(Types.COMMENT, result.toString());
                 }
-
-                System.out.println("Identifier");
                 return new Token(Types.IDENTIFIER, parseIdentifier());
             default:
                 if(isDigit(currentChar)){
-                    if(isDate()){
-                        System.out.println("Date");
-                        return new Token(Types.DATE, parseDate());
-                    } else if(isTimestamp()){
-                        System.out.println("Timestamp");
-                        return new Token(Types.TIMESTAMP, parseTimestamp());
-                    } else if(isDouble()){
-                        System.out.println("Double");
-                        String doubleString = this.input.substring(this.index, this.input.indexOf(' ', this.index));
-                        System.out.println(doubleString);
-                        return new Token(Types.DOUBLE, Double.parseDouble(doubleString));
-                    } else {
-                        System.out.println("Integer");
-                        return new Token(Types.INTEGER, parseInteger());
+                    int num = parseInteger();
+                    switch(currentChar){
+                        case '-':
+                            consume();
+                            int month = parseInteger();
+                            if(currentChar == '-'){
+                                consume();
+                                int day = parseInteger();
+                                return new Token(Types.DATE, new Date(num, month, day));
+                            } else {
+                                throw new Error("Invalid date format @ " + this.index);
+                            }
+                        case ':':
+                            consume();
+                            int minutes = parseInteger();
+                            if(currentChar == ':'){
+                                consume();
+                                int seconds = parseInteger();
+                                return new Token(Types.TIMESTAMP, new ISOTimestamp(num, minutes, seconds));
+                            }
+                            return new Token(Types.INTEGER, num);
+                        case '.':
+                            consume();
+                            String decimal = parseDecimal();
+                            String d = num + "." + decimal;
+                            return new Token(Types.DOUBLE, Double.parseDouble(d));
+                        default:
+                            return new Token(Types.INTEGER, num);
                     }
                 } else if(currentChar == 't' || currentChar == 'f'){
                     String bool = parseIdentifier();

@@ -2,6 +2,7 @@ package BDF;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.util.ArrayList;
 
 public class BDF{
     private File input;
@@ -12,7 +13,7 @@ public class BDF{
     public BDF(File input){
         this.input = input;
         String inputString = getAsString(input);
-        this.lexer = new Lexer(inputString);
+        this.lexer = new Lexer(" " + inputString);
         this.parser = new Parser(lexer);
     }
 
@@ -29,7 +30,7 @@ public class BDF{
     }
 
     public void printObject(){
-        Token[] tokens = lexer.lex();
-        for (Token token : tokens){ System.out.println(token.toString()); }
+        ArrayList<Token> tokens = parser.getInput();
+        tokens.listIterator().forEachRemaining(token -> System.out.println(token.toString()));
     }
 }

@@ -1,3 +1,4 @@
+$schema "example.schema.bdf"
 name "Alex" // string
 age 10 // int
 money 1.08 // double
@@ -29,6 +30,10 @@ wishlists ( // instance of dynamic type with array
 
 nerd {p person, list booklist} // dynamic type w/ dynamic types
 alldata ( // instance of nested dynamic types
+  n0 nerd {
+    p person {"Beth", -1}, // age unknown
+    list booklist {list []}
+  },
   n1 nerd {
     p person {"Connor", 23},
     list booklist {list ["TAPL"]}
