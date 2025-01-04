@@ -1,0 +1,12 @@
+$schema "product.schema.bdf"
+
+p product {
+    productID 1,
+    productName "An ice sculpture",
+    price 12.5,
+    tags [
+        "cold",
+        "ice"
+    ]
+}
+// users are not restricted to just having the required fields of a schema inside a bdf file using the schema

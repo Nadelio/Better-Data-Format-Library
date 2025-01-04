@@ -1,0 +1,12 @@
+$include [] // do not include any extra schemas
+$optional {
+    example "foo"
+}
+
+person {name string, age int} // define person type for every bdf file that uses this schema
+
+bob { // define bob constant object for every bdf file that uses this schema
+    name "Bob",
+    age 21,
+    money 12.02
+}

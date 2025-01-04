@@ -17,6 +17,14 @@ public class BDF{
         this.parser = new Parser(lexer);
     }
 
+    public BDF(File input, File schema){
+        this.input = input;
+        String inputString = getAsString(input);
+        String schemaString = getAsString(schema);
+        this.lexer = new Lexer(" " + inputString, " " + schemaString);
+        this.parser = new Parser(lexer);
+    }
+
     public BDF(BDFAST data){ this.data = data; }
 
     private String getAsString(File file){

@@ -1,0 +1,22 @@
+$include []
+
+vector3 {
+    length double,
+    width double,
+    height double
+}
+
+product {
+    productID int,
+    productName string,
+    price double,
+    $optional {
+        tags [string, 1, -1, true],
+        dimensions vector3,
+        wartehouseLocation "https://examples.com/geographical-location.schema.json"
+    }
+}
+
+p product // require at least one product as a top scope field named "p"
+
+// this example is taken from this website: https://json-schema.org/learn/getting-started-step-by-step#validate-json-data-against-the-schema

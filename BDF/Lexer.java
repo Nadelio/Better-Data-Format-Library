@@ -5,6 +5,7 @@ import java.util.Date;
 
 public class Lexer {
     private String input;
+    private String schema;
     private int index;
     private char currentChar;
 
@@ -35,6 +36,13 @@ public class Lexer {
         this.currentChar = input.charAt(0);
     }
 
+    public Lexer(String input, String schema) {
+        this.input = input;
+        this.schema = schema;
+        this.index = -1;
+        this.currentChar = input.charAt(0);
+    }
+
     public ArrayList<Token> lex() {
         ArrayList<Token> tokens = new ArrayList<Token>();
         Token token = parseToken();
@@ -42,6 +50,23 @@ public class Lexer {
             tokens.add(token);
             token = parseToken();
         }
+        return tokens;
+    }
+
+    public ArrayList<Token> lexSchema(){
+        if(this.schema == null){ throw new Error("No schema provided"); }
+        
+        String input = this.input;
+        this.input = this.schema;
+        ArrayList<Token> tokens = new ArrayList<Token>();
+
+        Token token = parseToken();
+        while (token.getType() != Types.EOF) {
+            tokens.add(token);
+            token = parseToken();
+        }
+
+        this.input = input;
         return tokens;
     }
 
